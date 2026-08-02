@@ -1,0 +1,82 @@
+package com.anksostudio.taskmanager.service.Impl;
+
+import com.anksostudio.taskmanager.dto.LoginRequestDto;
+import com.anksostudio.taskmanager.dto.RegisterRequestDto;
+import com.anksostudio.taskmanager.dto.RegisterResponseDto;
+import com.anksostudio.taskmanager.model.Role;
+import com.anksostudio.taskmanager.model.User;
+import com.anksostudio.taskmanager.repository.UserRepository;
+import com.anksostudio.taskmanager.service.UserService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
+
+@Service
+public class UserServiceImpl implements UserService {
+
+     private UserRepository userRepository;
+     private PasswordEncoder passwordEncoder;
+
+     public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder){
+         this.userRepository = userRepository;
+         this.passwordEncoder = passwordEncoder;
+     }
+
+    @Override
+    public RegisterResponseDto register(RegisterRequestDto registerRequestDto) {
+
+         if (userRepository.findByEmail(registerRequestDto.getEmail()).isPresent()){
+             throw new RuntimeException("Email already registered");
+         }
+
+          User user = mapRegisterRequestDtotoUser(registerRequestDto);
+          User saveUser = userRepository.save(user);
+
+          RegisterResponseDto registerResponseDto = mapSaveUsertoDTO(saveUser);
+
+
+          return registerResponseDto;
+    }
+
+    @Override
+    public RegisterResponseDto login(LoginRequestDto requestDto) {
+         User user = userRepository.findByEmail(requestDto.getEmail())
+                 .orElseThrow(() -> new RuntimeException("Email is not registered"));
+
+
+       boolean passwordMatches = passwordEncoder.matches(
+                requestDto.getPassword(),
+                user.getPassword()
+        );
+
+       if (!passwordMatches){
+           throw new RuntimeException("Invalid password");
+       }
+
+       return mapSaveUsertoDTO(user);
+
+    }
+
+
+    public User mapRegisterRequestDtotoUser(RegisterRequestDto reqDTO){
+         User user = new User();
+         user.setName(reqDTO.getName());
+         user.setEmail(reqDTO.getEmail());
+
+         user.setPassword(passwordEncoder.encode(reqDTO.getPassword()));
+         user.setRole(Role.MEMBER);
+
+         return user;
+    }
+
+    public RegisterResponseDto mapSaveUsertoDTO(User user){
+         RegisterResponseDto respDto = new RegisterResponseDto();
+
+         respDto.setId(user.getId());
+         respDto.setName(user.getName());
+         respDto.setEmail(user.getEmail());
+         respDto.setRole(user.getRole());
+
+         return respDto;
+    }
+}
