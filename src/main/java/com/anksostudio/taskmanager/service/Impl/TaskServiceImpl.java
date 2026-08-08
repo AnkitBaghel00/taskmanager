@@ -3,6 +3,7 @@ package com.anksostudio.taskmanager.service.Impl;
 import com.anksostudio.taskmanager.dto.TaskCreateReqDto;
 import com.anksostudio.taskmanager.dto.TaskRespDto;
 import com.anksostudio.taskmanager.dto.TaskStatusUpdateReqDto;
+import com.anksostudio.taskmanager.exception.ResourceNotFoundException;
 import com.anksostudio.taskmanager.model.*;
 import com.anksostudio.taskmanager.repository.ProjectRepository;
 import com.anksostudio.taskmanager.repository.TaskRepository;
@@ -35,10 +36,10 @@ public class TaskServiceImpl implements TaskService {
     public TaskRespDto createTask(TaskCreateReqDto createReqDto) {
 
         User assignedTo = userRepository.findById(createReqDto.getAssignedToId())
-                .orElseThrow(() -> new RuntimeException("Assigned user not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Assigned user not found"));
 
         Project project = projectRepository.findById(createReqDto.getProjectId())
-                .orElseThrow(() -> new RuntimeException("Project does not exists, please create an project first"));
+                .orElseThrow(() -> new ResourceNotFoundException("Project does not exists, please create an project first"));
 
         Task task = mapCreateReqToTask(createReqDto,assignedTo,project);
         Task savedTask = taskRepository.save(task);
@@ -66,9 +67,9 @@ public class TaskServiceImpl implements TaskService {
     public TaskRespDto updateTaskStatus(Long taskId, TaskStatusUpdateReqDto statusUpdateReqDto) {
         String email = SecurityContextHolder.getContext().getAuthentication().getName();
         User currentUser = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
         Task task = taskRepository.findById(taskId)
-                .orElseThrow(() -> new RuntimeException("Task not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
 
         boolean isAssignee = task.getAssignedTo().getId().equals(currentUser.getId());
         boolean isMangerOrAdmin = currentUser.getRole() == Role.MANAGER || currentUser.getRole() == Role.ADMIN;

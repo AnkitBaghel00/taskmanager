@@ -2,6 +2,7 @@ package com.anksostudio.taskmanager.service.Impl;
 
 import com.anksostudio.taskmanager.dto.CreateProjectRequestDto;
 import com.anksostudio.taskmanager.dto.ProjectResponseDto;
+import com.anksostudio.taskmanager.exception.ResourceNotFoundException;
 import com.anksostudio.taskmanager.model.Project;
 import com.anksostudio.taskmanager.model.User;
 import com.anksostudio.taskmanager.repository.ProjectRepository;
@@ -30,7 +31,7 @@ public class ProjectServiceImpl implements ProjectService {
 
        String email = SecurityContextHolder.getContext().getAuthentication().getName();
        User user = userRepository.findByEmail(email)
-               .orElseThrow(() -> new RuntimeException("User not found"));
+               .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
        Project mapProjected =  mapRequestToProject(projectRequestDto, user);
         Project save = projectRepository.save(mapProjected);
@@ -43,7 +44,7 @@ public class ProjectServiceImpl implements ProjectService {
     public ProjectResponseDto getProject(Long id) {
 
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Project not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
 
         return mapProjectResponse(project);
     }

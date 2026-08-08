@@ -4,6 +4,9 @@ import com.anksostudio.taskmanager.dto.LoginRequestDto;
 import com.anksostudio.taskmanager.dto.LoginResponseDto;
 import com.anksostudio.taskmanager.dto.RegisterRequestDto;
 import com.anksostudio.taskmanager.dto.RegisterResponseDto;
+import com.anksostudio.taskmanager.exception.DuplicateResourceException;
+import com.anksostudio.taskmanager.exception.InvalidCredentialsException;
+import com.anksostudio.taskmanager.exception.ResourceNotFoundException;
 import com.anksostudio.taskmanager.model.Role;
 import com.anksostudio.taskmanager.model.User;
 import com.anksostudio.taskmanager.repository.UserRepository;
@@ -11,6 +14,7 @@ import com.anksostudio.taskmanager.security.JwtUtil;
 import com.anksostudio.taskmanager.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
 
 
 @Service
@@ -30,7 +34,8 @@ public class UserServiceImpl implements UserService {
     public RegisterResponseDto register(RegisterRequestDto registerRequestDto) {
 
          if (userRepository.findByEmail(registerRequestDto.getEmail()).isPresent()){
-             throw new RuntimeException("Email already registered");
+//             throw new RuntimeException("Email already registered");
+             throw new DuplicateResourceException("Email already registered");
          }
 
           User user = mapRegisterRequestDtotoUser(registerRequestDto);
@@ -46,7 +51,8 @@ public class UserServiceImpl implements UserService {
     @Override
     public LoginResponseDto login(LoginRequestDto requestDto) {
          User user = userRepository.findByEmail(requestDto.getEmail())
-                 .orElseThrow(() -> new RuntimeException("Email is not registered"));
+                 .orElseThrow(() -> new ResourceNotFoundException("Email is not registered"));
+
 
        boolean passwordMatches = passwordEncoder.matches(
                 requestDto.getPassword(),
@@ -54,8 +60,10 @@ public class UserServiceImpl implements UserService {
         );
 
        if (!passwordMatches){
-           throw new RuntimeException("Invalid password");
+//           throw new RuntimeException("Invalid password");
+           throw new InvalidCredentialsException("Invalid password");
        }
+
 
 
         String token =  jwtUtil.generateToken(user.getEmail(),user.getRole().name());
